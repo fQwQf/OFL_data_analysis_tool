@@ -69,7 +69,7 @@ class LogParser:
     def _parse_algorithm(self):
         """从特定的日志行中解析算法名称。"""
         for line in self._content[:30]:
-            match = re.search(r"\[INFO\]\s+(OneshotOurs.*)", line)
+            match = re.search(r"\[INFO\]\s+(Oneshot.*)", line)
             if match:
                 self.extracted_config_summary['algorithm'] = match.group(1).strip()
                 return
@@ -122,9 +122,15 @@ class LogParser:
             if protos_std_match:
                 current_round_data["g_protos_std"] = float(protos_std_match.group(1))
             
-            global_acc_match = re.search(r"The test accuracy \(with prototype\) of .*: ([\d.]+)", line)
+            global_acc_match = re.search(r"The test accuracy(?: \(with prototype\))? of .*: ([\d.]+)", line)
+
             if global_acc_match:
-                current_round_data["global_test_accuracy"] = float(global_acc_match.group(1))
+                new_accuracy = float(global_acc_match.group(1))
+
+                if ("global_test_accuracy" not in current_round_data or 
+                    new_accuracy > current_round_data["global_test_accuracy"]):
+                    current_round_data["global_test_accuracy"] = new_accuracy
+
                 if config.EXTRACT_CLIENT_ACCURACY:
                     current_round_data.update(client_accuracies)
 
